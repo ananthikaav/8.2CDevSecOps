@@ -1,4 +1,4 @@
-pipeline {
+ppipeline {
     agent any
 
     stages {
@@ -16,7 +16,6 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                // Redirect output to test.log, always succeed
                 bat 'npm test > test.log 2>&1 || exit 0'
             }
             post {
@@ -28,7 +27,6 @@ pipeline {
 
         stage('Coverage Report') {
             steps {
-                // If coverage script exists
                 bat 'npm run coverage > coverage.log 2>&1 || exit 0'
                 archiveArtifacts artifacts: 'coverage/**', allowEmptyArchive: true
             }
@@ -44,7 +42,20 @@ pipeline {
 
     post {
         always {
-            echo "Pipeline finished. Check artifacts and console output."
+            emailext (
+                subject: "$PROJECT_NAME - Build #$BUILD_NUMBER - $BUILD_STATUS",
+                body: """
+                    <p><strong>Build Status:</strong> $BUILD_STATUS</p>
+                    <p><strong>Project:</strong> $PROJECT_NAME</p>
+                    <p><strong>Build Number:</strong> $BUILD_NUMBER</p>
+                    <p><strong>Console Output:</strong> <a href="$BUILD_URL">View here</a></p>
+                    <p>Artifacts attached: test log, coverage report, audit results.</p>
+                """,
+                mimeType: 'text/html',
+                to: 'ananthikaa.vivek@gmail.com',
+                attachmentsPattern: 'test.log, coverage.log, npm-audit.json'
+            )
+            echo "Email notification sent."
         }
     }
 }
