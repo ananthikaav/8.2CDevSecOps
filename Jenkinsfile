@@ -10,14 +10,14 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                bat 'npm ci'
+                bat 'npm install'
             }
         }
 
         stage('Run Tests') {
             steps {
-                // Run tests, capture logs
-                bat 'npm test 2>&1 | tee test.log || true'
+                // Redirect output to test.log, always succeed
+                bat 'npm test > test.log 2>&1 || exit 0'
             }
             post {
                 always {
@@ -28,15 +28,15 @@ pipeline {
 
         stage('Coverage Report') {
             steps {
-                bat 'npm run coverage 2>&1 | tee coverage.log || true'
+                // If coverage script exists
+                bat 'npm run coverage > coverage.log 2>&1 || exit 0'
                 archiveArtifacts artifacts: 'coverage/**', allowEmptyArchive: true
             }
         }
 
         stage('NPM Security Audit') {
             steps {
-                // Run npm audit, save results
-                bat 'npm audit --json > npm-audit.json || true'
+                bat 'npm audit --json > npm-audit.json || exit 0'
                 archiveArtifacts artifacts: 'npm-audit.json', allowEmptyArchive: true
             }
         }
